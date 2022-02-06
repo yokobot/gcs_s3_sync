@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  gcs-s3-sync
+
+
+Globals:
+  Function:
+    Timeout: 30
+
+Resources:
+  GcsS3SyncFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: function/
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      #Events:
+      #  GcsS3Sync:
+      #    Type: Api
+      #    Properties:
+      #      Path: /hello
+      #      Method: get
+
+Outputs:
+  GcsS3SyncFunction:
+    Description: "Hello World Lambda Function ARN"
+    Value: !GetAtt GcsS3SyncFunction.Arn
+  GcsS3SyncFunctionIamRole:
+    Description: "Implicit IAM Role created for Hello World function"
+    Value: !GetAtt GcsS3SyncFunctionRole.Arn

@@ -9,6 +9,11 @@ Globals:
     Timeout: 30
 
 Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: yokobot-dev #TODO　環境変数から取得するように修正する
+
   GcsS3SyncFunction:
     Type: AWS::Serverless::Function
     Properties:

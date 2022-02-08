@@ -20,17 +20,18 @@ Resources:
       CodeUri: function/
       Handler: app.lambda_handler
       Runtime: python3.7
-      #Events:
-      #  GcsS3Sync:
-      #    Type: Api
-      #    Properties:
-      #      Path: /hello
-      #      Method: get
+      Events:
+        GcsS3Sync:
+          Type: S3
+          Properties:
+            Bucket: !Ref S3Bucket
+            Events:
+              - s3:ObjectCreated:*
 
 Outputs:
   GcsS3SyncFunction:
-    Description: "Hello World Lambda Function ARN"
+    Description: "Lambda Function ARN"
     Value: !GetAtt GcsS3SyncFunction.Arn
   GcsS3SyncFunctionIamRole:
-    Description: "Implicit IAM Role created for Hello World function"
+    Description: "Implicit IAM Role created for lambda function"
     Value: !GetAtt GcsS3SyncFunctionRole.Arn

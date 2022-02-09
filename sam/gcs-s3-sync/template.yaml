@@ -27,6 +27,7 @@ Resources:
             Bucket: !Ref S3Bucket
             Events:
               - s3:ObjectCreated:*
+              - s3:ObjectRemoved:*
 
 Outputs:
   GcsS3SyncFunction:

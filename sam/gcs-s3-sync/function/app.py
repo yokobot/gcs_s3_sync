@@ -21,14 +21,36 @@ def get_parameters(param_key):
     return response['Parameters'][0]['Value']
 
 
-def lambda_handler(event, context):
-    param_value = get_parameters(PARAM_KEY)
-
-    service_account_info = json.loads(param_value)
+def get_google_credentials(google_api_key):
+    service_account_info = json.loads(google_api_key)
     credentials = service_account.Credentials.from_service_account_info(
         service_account_info,
         scopes=SCOPES
     )
+    return credentials
 
-    client = storage.Client(credentials=credentials)
-    #TODO ここからgcsにファイルを置く処理と削除する処理を書く
+
+def make_gcs_client(credentials):
+    gcs_client = storage.Client(credentials=credentials)
+    return gcs_client
+
+
+def copy_object(gcs_client, bucket_name, obj_name):
+    bucket = gcs_client.get_bucket(bucket_name)
+    blob = bucket.blob(obj_name)
+    blob.upload_from_filename(obj_name)
+    #TODO
+
+
+def lambda_handler(event, context):
+    google_api_key = get_parameters(PARAM_KEY)
+    credentials = get_google_credentials(google_api_key)
+    gcs_client = make_gcs_client(credentials)
+
+    if event['Records'][0]['eventName'].startswith('ObjectCreated'):
+        copy_object(event['Records'][0]['s3']['object']['key'])
+    elif event['Records'][0]['eventName'].startswith('ObjectRemoved'):
+        #ここにgcs削除を書く
+        None
+    else:
+        None

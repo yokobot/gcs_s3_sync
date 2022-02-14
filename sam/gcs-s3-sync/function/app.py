@@ -45,9 +45,19 @@ def copy_object(s3_client, gcs_client, bucket_name, obj_name):
     with open('/tmp/' + str(obj_name), 'wb') as data:
         s3_client.download_fileobj(bucket_name, obj_name, data)
 
-    gcs_bucket = gcs_client.get_bucket(bucket_name)
+    gcs_bucket = gcs_client.bucket(bucket_name)
     blob = gcs_bucket.blob(obj_name)
     blob.upload_from_filename('/tmp/' + str(obj_name))
+
+
+def delete_object(gcs_client, bucket_name, obj_name):
+    gcs_bucket = gcs_client.bucket(bucket_name)
+    blob = gcs_bucket.blob(obj_name)
+    if blob.exists():
+        print('file is exists.')
+        blob.delete()
+    else:
+        None
 
 
 def lambda_handler(event, context):

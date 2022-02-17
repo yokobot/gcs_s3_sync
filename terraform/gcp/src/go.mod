@@ -1,4 +1,4 @@
-module github.com/yokobot
+module example.com/gcs_s3_sync
 
 go 1.16
 

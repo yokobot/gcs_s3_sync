@@ -1,11 +1,24 @@
 package main
 
 import (
-    "fmt"
-    "github.com/GoogleCloudPlatform/functions-framework-go/funcframework"
-    "github.com/yokobot"
+    "os"
+	"log"
+	"context"
+	"github.com/GoogleCloudPlatform/functions-framework-go/funcframework"
+	"example.com/gcs_s3_sync"
 )
 
 func main() {
-    fmt.Printf("%v", "test.")
+	ctx := context.Background()
+	if err := funcframework.RegisterHTTPFunctionContext(ctx, "/", gcs_s3_sync.HelloWorld); err != nil {
+		log.Fatalf("funcframework.RegisterHTTPFunctionContext: %v\n", err)
+	}
+	// Use PORT environment variable, or default to 8080.
+	port := "8080"
+	if envPort := os.Getenv("PORT"); envPort != "" {
+		port = envPort
+	}
+	if err := funcframework.Start(port); err != nil {
+		log.Fatalf("funcframework.Start: %v\n", err)
+	}
 }

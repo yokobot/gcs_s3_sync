@@ -47,7 +47,10 @@ def copy_object(s3_client, gcs_client, bucket_name, obj_name):
 
     gcs_bucket = gcs_client.bucket(bucket_name)
     blob = gcs_bucket.blob(obj_name)
-    blob.upload_from_filename('/tmp/' + str(obj_name))
+    if blob.exists():
+        print('file is exists.')
+    else:
+        blob.upload_from_filename('/tmp/' + str(obj_name))
 
 
 def delete_object(gcs_client, bucket_name, obj_name):

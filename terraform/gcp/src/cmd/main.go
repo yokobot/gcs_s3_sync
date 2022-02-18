@@ -10,9 +10,10 @@ import (
 
 func main() {
 	ctx := context.Background()
-	if err := funcframework.RegisterHTTPFunctionContext(ctx, "/", gcs_s3_sync.HelloWorld); err != nil {
-		log.Fatalf("funcframework.RegisterHTTPFunctionContext: %v\n", err)
+	if err := funcframework.RegisterEventFunctionContext(ctx, "/", gcs_s3_sync.HelloGCS()); err != nil {
+        log.Fatalf("funcframework.RegisterEventFunctionContext: %v\n", err)
 	}
+
 	// Use PORT environment variable, or default to 8080.
 	port := "8080"
 	if envPort := os.Getenv("PORT"); envPort != "" {

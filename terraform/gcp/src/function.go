@@ -59,3 +59,18 @@ func HelloGCS(ctx context.Context, e GCSEvent) error {
     log.Printf("Updated: %v\n", e.Updated)
     return nil
 }
+
+// finalized event
+func Finalized(ctx ctx.Context, e GCSEvent) error {
+    meta, err := metadata.FromContext(ctx)
+    if err != nil {
+        return fmt.Errorf("metadata.FromContext: %v", err)
+    }
+    // 同名ファイルがs3に存在しているか確認して、存在していれば何もしない、存在しなければファイルをs3にコピーする
+    // aws credentailをgcpのsecretsに入れる
+    // secretsからcredentailを読み込む
+    // s3 client作る
+    // s3に同名ファイルがあるかを調べる
+    // s3にファイルを追加する
+    return nil
+}

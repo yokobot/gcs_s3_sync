@@ -104,7 +104,6 @@ func Finalized(ctx ctx.Context, e GCSEvent) error {
     creds := credentials.NewStaticCredentials(aws_access_key_id, aws_secret_access_key, "")
     svc := s3.New(sess, aws.NewConfig().WithCredentials(creds))
 
-
     // s3に同名ファイルがあるかを調べる
     // s3にファイルを追加する
     return nil

@@ -105,6 +105,16 @@ func Finalized(ctx ctx.Context, e GCSEvent) error {
     svc := s3.New(sess, aws.NewConfig().WithCredentials(creds))
 
     // s3に同名ファイルがあるかを調べる
-    // s3にファイルを追加する
+    input := &s3.ListObjectsInput{
+        Bucket: aws.String(e.Bucket),
+        Prefix: aws.String(e.Name),
+    }
+    resp, err := svc.ListObjects(input)
+    if err != nil {
+        return fmt.Errorf("s3 ListObjects error: %v", err)
+    }
+
+    // 同名のファイルが存在しなければs3にファイルを追加する
+
     return nil
 }

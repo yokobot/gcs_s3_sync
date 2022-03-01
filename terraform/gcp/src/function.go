@@ -115,6 +115,12 @@ func Finalized(ctx ctx.Context, e GCSEvent) error {
     }
 
     // 同名のファイルが存在しなければs3にファイルを追加する
+    for _, item := range resp.Contents {
+        object_name := *item.Key
+    }
+    if object_name != e.Name {
+        // s3 upload処理を書く
+    }
 
     return nil
 }

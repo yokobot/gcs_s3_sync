@@ -119,7 +119,14 @@ func Finalized(ctx ctx.Context, e GCSEvent) error {
         object_name := *item.Key
     }
     if object_name != e.Name {
-        // s3 upload処理を書く
+        input := &s3.PutObjectInput{
+            Bucket: aws.String(e.Bucket),
+            Prefix: aws.String(e.Name),
+        }
+        _, err := svc.PutObject(input)
+        if err != nil {
+            return fmt.Errorf("s3 ListObjects error: %v", err)
+        }
     }
 
     return nil

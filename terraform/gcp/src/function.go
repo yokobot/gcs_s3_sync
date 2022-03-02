@@ -123,7 +123,7 @@ func Finalized(ctx ctx.Context, e GCSEvent) error {
             Bucket: aws.String(e.Bucket),
             Prefix: aws.String(e.Name),
         }
-        resp, err := svc.PutObject(input)
+        _, err := svc.PutObject(input)
         if err != nil {
             return fmt.Errorf("s3 ListObjects error: %v", err)
         }

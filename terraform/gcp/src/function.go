@@ -131,3 +131,49 @@ func Finalized(ctx ctx.Context, e GCSEvent) error {
 
     return nil
 }
+
+// delete event
+func Delete(ctx ctx.Context, e GCSEvent) error {
+    meta, err := metadata.FromContext(ctx)
+    if err != nil {
+        return fmt.Errorf("metadata.FromContext: %v", err)
+    }
+
+    //s3に同名ファイルが存在しているか確認して、存在していればファイルを削除する
+    // aws credentailをgcpのsecretsに入れる
+    // secretsからcredentailを読み込む
+    aws_access_key_id := GetSecret("aws_access_key_id")
+    aws_secret_access_key := GetSecret("aws_secret_access_key")
+
+    // s3 client作る
+    sess := session.Must(session.NewSession())
+    creds := credentials.NewStaticCredentials(aws_access_key_id, aws_secret_access_key, "")
+    svc := s3.New(sess, aws.NewConfig().WithCredentials(creds))
+
+    // s3に同名ファイルがあるかを調べる
+    input := &s3.ListObjectsInput{
+        Bucket: aws.String(e.Bucket),
+        Prefix: aws.String(e.Name),
+    }
+    resp, err := svc.ListObjects(input)
+    if err != nil {
+        return fmt.Errorf("s3 ListObjects error: %v", err)
+    }
+
+    // 同名のファイルが存在していればs3にファイルを削除する
+    for _, item := range resp.Contents {
+        object_name := *item.Key
+    }
+    if object_name == e.Name {
+        input := &s3.DeleteObjectInput{
+            Bucket: aws.String(e.Bucket),
+            Prefix: aws.String(e.Name),
+        }
+        _, err := svc.DeleteObject(input)
+        if err != nil {
+            return fmt.Errorf("s3 ListObjects error: %v", err)
+        }
+    }
+
+    return nil
+}

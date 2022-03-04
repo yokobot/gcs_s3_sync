@@ -86,14 +86,8 @@ func GetSecret(s string) (string, error) {
     return value, nil
 }
 
-
-// finalized event
-func Finalized(ctx ctx.Context, e GCSEvent) error {
-    meta, err := metadata.FromContext(ctx)
-    if err != nil {
-        return fmt.Errorf("metadata.FromContext: %v", err)
-    }
-    // 同名ファイルがs3に存在しているか確認して、存在していれば何もしない、存在しなければファイルをs3にコピーする
+// Return S3 client
+func S3Client() (svc, struct) {
     // aws credentailをgcpのsecretsに入れる
     // secretsからcredentailを読み込む
     aws_access_key_id := GetSecret("aws_access_key_id")
@@ -103,6 +97,18 @@ func Finalized(ctx ctx.Context, e GCSEvent) error {
     sess := session.Must(session.NewSession())
     creds := credentials.NewStaticCredentials(aws_access_key_id, aws_secret_access_key, "")
     svc := s3.New(sess, aws.NewConfig().WithCredentials(creds))
+    return
+}
+
+
+// finalized event
+func Finalized(ctx ctx.Context, e GCSEvent) error {
+    meta, err := metadata.FromContext(ctx)
+    if err != nil {
+        return fmt.Errorf("metadata.FromContext: %v", err)
+    }
+    // 同名ファイルがs3に存在しているか確認して、存在していれば何もしない、存在しなければファイルをs3にコピーする
+    svc := S3Client()
 
     // s3に同名ファイルがあるかを調べる
     input := &s3.ListObjectsInput{
@@ -140,15 +146,7 @@ func Delete(ctx ctx.Context, e GCSEvent) error {
     }
 
     //s3に同名ファイルが存在しているか確認して、存在していればファイルを削除する
-    // aws credentailをgcpのsecretsに入れる
-    // secretsからcredentailを読み込む
-    aws_access_key_id := GetSecret("aws_access_key_id")
-    aws_secret_access_key := GetSecret("aws_secret_access_key")
-
-    // s3 client作る
-    sess := session.Must(session.NewSession())
-    creds := credentials.NewStaticCredentials(aws_access_key_id, aws_secret_access_key, "")
-    svc := s3.New(sess, aws.NewConfig().WithCredentials(creds))
+    svc := S3Client()
 
     // s3に同名ファイルがあるかを調べる
     input := &s3.ListObjectsInput{

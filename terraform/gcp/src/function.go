@@ -87,8 +87,8 @@ func GetSecret(s string) (string, error) {
 
 // Return S3 client
 func S3Client() svc {
-    aws_access_key_id := GetSecret("aws_access_key_id")
-    aws_secret_access_key := GetSecret("aws_secret_access_key")
+    aws_access_key_id, _ := GetSecret("aws_access_key_id")
+    aws_secret_access_key, _ := GetSecret("aws_secret_access_key")
 
     // s3 client作る
     sess := session.Must(session.NewSession())
@@ -99,7 +99,7 @@ func S3Client() svc {
 }
 
 // finalized event
-func Finalized(ctx ctx.Context, e GCSEvent) error {
+func Finalized(ctx context.Context, e GCSEvent) error {
     meta, err := metadata.FromContext(ctx)
     if err != nil {
         return fmt.Errorf("metadata.FromContext: %v", err)
@@ -120,15 +120,15 @@ func Finalized(ctx ctx.Context, e GCSEvent) error {
     // 同名のファイルが存在しなければs3にファイルを追加する
     for _, item := range resp.Contents {
         object_name := *item.Key
-    }
-    if object_name != e.Name {
-        input := &s3.PutObjectInput{
-            Bucket: aws.String(e.Bucket),
-            Prefix: aws.String(e.Name),
-        }
-        _, err := svc.PutObject(input)
-        if err != nil {
-            return fmt.Errorf("s3 ListObjects error: %v", err)
+        if object_name != e.Name {
+            input := &s3.PutObjectInput{
+                Bucket: aws.String(e.Bucket),
+                Key: aws.String(e.Name),
+            }
+            _, err := svc.PutObject(input)
+            if err != nil {
+                return fmt.Errorf("s3 ListObjects error: %v", err)
+            }
         }
     }
 
@@ -136,7 +136,7 @@ func Finalized(ctx ctx.Context, e GCSEvent) error {
 }
 
 // delete event
-func Delete(ctx ctx.Context, e GCSEvent) error {
+func Delete(ctx context.Context, e GCSEvent) error {
     meta, err := metadata.FromContext(ctx)
     if err != nil {
         return fmt.Errorf("metadata.FromContext: %v", err)
@@ -158,15 +158,15 @@ func Delete(ctx ctx.Context, e GCSEvent) error {
     // 同名のファイルが存在していればs3にファイルを削除する
     for _, item := range resp.Contents {
         object_name := *item.Key
-    }
-    if object_name == e.Name {
-        input := &s3.DeleteObjectInput{
-            Bucket: aws.String(e.Bucket),
-            Prefix: aws.String(e.Name),
-        }
-        _, err := svc.DeleteObject(input)
-        if err != nil {
-            return fmt.Errorf("s3 ListObjects error: %v", err)
+        if object_name == e.Name {
+            input := &s3.DeleteObjectInput{
+                Bucket: aws.String(e.Bucket),
+                Key: aws.String(e.Name),
+            }
+            _, err := svc.DeleteObject(input)
+            if err != nil {
+                return fmt.Errorf("s3 ListObjects error: %v", err)
+            }
         }
     }
 

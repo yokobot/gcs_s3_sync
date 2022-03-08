@@ -72,7 +72,7 @@ func GetSecret(s string) (string, error) {
     ctx := context.Background()
     client, err := secretmanager.NewClient(ctx)
     if err != nil {
-        return  "", fmt.Errorf("failed to create secretmanager client: %v", err)
+        return "", fmt.Errorf("failed to create secretmanager client: %v", err)
     }
     req := &secretmanagerpb.AccessSecretVersionRequest{
         Name: s,
@@ -86,7 +86,7 @@ func GetSecret(s string) (string, error) {
 }
 
 // Return S3 client
-func S3Client() svc {
+func S3Client() *s3.S3 {
     aws_access_key_id, _ := GetSecret("aws_access_key_id")
     aws_secret_access_key, _ := GetSecret("aws_secret_access_key")
 
@@ -104,6 +104,11 @@ func Finalized(ctx context.Context, e GCSEvent) error {
     if err != nil {
         return fmt.Errorf("metadata.FromContext: %v", err)
     }
+
+    if meta.EventType != "google.storage.object.finalize" {
+        return fmt.Errorf("Event is not finalize. %v")
+    }
+
     // 同名ファイルがs3に存在しているか確認して、存在していれば何もしない、存在しなければファイルをs3にコピーする
     svc := S3Client()
 
@@ -123,7 +128,7 @@ func Finalized(ctx context.Context, e GCSEvent) error {
         if object_name != e.Name {
             input := &s3.PutObjectInput{
                 Bucket: aws.String(e.Bucket),
-                Key: aws.String(e.Name),
+                Key:    aws.String(e.Name),
             }
             _, err := svc.PutObject(input)
             if err != nil {
@@ -140,6 +145,10 @@ func Delete(ctx context.Context, e GCSEvent) error {
     meta, err := metadata.FromContext(ctx)
     if err != nil {
         return fmt.Errorf("metadata.FromContext: %v", err)
+    }
+
+    if meta.EventType != "google.storage.object.delete" {
+        return fmt.Errorf("Event is not delete. %v")
     }
 
     //s3に同名ファイルが存在しているか確認して、存在していればファイルを削除する
@@ -161,7 +170,7 @@ func Delete(ctx context.Context, e GCSEvent) error {
         if object_name == e.Name {
             input := &s3.DeleteObjectInput{
                 Bucket: aws.String(e.Bucket),
-                Key: aws.String(e.Name),
+                Key:    aws.String(e.Name),
             }
             _, err := svc.DeleteObject(input)
             if err != nil {

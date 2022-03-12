@@ -77,6 +77,7 @@ func HelloGCS(ctx context.Context, e GCSEvent) error {
 
 // get aws credentail from gcp secrets
 func GetSecret(s string) (string, error) {
+    log.Printf("GetSecret start.")
 	ctx := context.Background()
 	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
@@ -90,24 +91,35 @@ func GetSecret(s string) (string, error) {
 		return "", fmt.Errorf("failed to access secret verion: %v", err)
 	}
 	value := string(result.Payload.Data)
+    log.Printf("GetSecret end.")
 	return value, nil
 }
 
 // Return S3 client
 func S3Client() *s3.S3 {
+    log.Printf("S3client start.")
 	aws_access_key_id, _ := GetSecret("aws_access_key_id")
 	aws_secret_access_key, _ := GetSecret("aws_secret_access_key")
+    fmt.Printf("(%%#v) %#v\n", aws_access_key_id)
+    fmt.Printf("(%%#v) %#v\n", aws_secret_access_key)
 
 	// s3 client作る
-	sess := session.Must(session.NewSession())
-	creds := credentials.NewStaticCredentials(aws_access_key_id, aws_secret_access_key, "")
-	svc := s3.New(sess, aws.NewConfig().WithCredentials(creds))
+	sess := session.Must(session.NewSession(&aws.Config{
+        Region: aws.String("ap-northeast-1"),
+        Credentials: credentials.NewStaticCredentials(aws_access_key_id, aws_secret_access_key, ""),
+    }))
+	//creds := credentials.NewStaticCredentials(aws_access_key_id, aws_secret_access_key, "")
+    //fmt.Printf("(%%#v) %#v\n", creds)
+	//svc := s3.New(sess, aws.NewConfig().WithCredentials(creds))
+	svc := s3.New(sess)
 
+    log.Printf("S3client end.")
 	return svc
 }
 
 // finalized event
 func Finalized(ctx context.Context, e GCSEvent) error {
+    log.Printf("finalize start.")
 	meta, err := metadata.FromContext(ctx)
 	if err != nil {
 		return fmt.Errorf("metadata.FromContext: %v", err)
@@ -118,19 +130,28 @@ func Finalized(ctx context.Context, e GCSEvent) error {
 	}
 
 	// 同名ファイルがs3に存在しているか確認して、存在していれば何もしない、存在しなければファイルをs3にコピーする
+    log.Printf("finalize create s3 client.")
 	svc := S3Client()
+
+    fmt.Printf("(%%#v) %#v\n", svc)
 
 	// s3に同名ファイルがあるかを調べる
 	input := &s3.ListObjectsInput{
 		Bucket: aws.String(e.Bucket),
-		Prefix: aws.String(e.Name),
-	}
-	resp, err := svc.ListObjects(input)
-	if err != nil {
-		return fmt.Errorf("s3 ListObjects error: %v", err)
+		//Prefix: aws.String(e.Name),
 	}
 
+    log.Printf("finalize list object.")
+	resp, err := svc.ListObjects(input)
+    fmt.Printf("(%%#v) %#v\n", resp)
+	if err != nil {
+		log.Printf("s3 ListObjects error: %v", err)
+	}
+
+    log.Printf("finalize list object.")
+
 	// 同名のファイルが存在しなければs3にファイルを追加する
+    fmt.Printf("(%%#v) %#v\n", resp)
 	for _, item := range resp.Contents {
 		object_name := *item.Key
 		if object_name != e.Name {
@@ -144,6 +165,8 @@ func Finalized(ctx context.Context, e GCSEvent) error {
 			}
 		}
 	}
+
+    log.Printf("finalize end.")
 
 	return nil
 }

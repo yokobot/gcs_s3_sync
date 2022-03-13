@@ -81,14 +81,20 @@ func GetSecret(s string) (string, error) {
 	ctx := context.Background()
 	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to create secretmanager client: %v", err)
+        log.Printf("failed to create secretmanager client:: %v", err)
 	}
+
+    projectId := "yokobot-dev"
+    secret := s
+
+    name := fmt.Sprintf("projects/%s/secrets/%s/versions/latest", projectId, secret)
+
 	req := &secretmanagerpb.AccessSecretVersionRequest{
-		Name: s,
+		Name: name,
 	}
 	result, err := client.AccessSecretVersion(ctx, req)
 	if err != nil {
-		return "", fmt.Errorf("failed to access secret verion: %v", err)
+        log.Printf("failed to access secret verion: %v", err)
 	}
 	value := string(result.Payload.Data)
     log.Printf("GetSecret end.")

@@ -77,55 +77,63 @@ func HelloGCS(ctx context.Context, e GCSEvent) error {
 
 // get aws credentail from gcp secrets
 func GetSecret(s string) (string, error) {
-    log.Printf("GetSecret start.")
+	log.Printf("GetSecret start.")
 	ctx := context.Background()
 	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
-        log.Printf("failed to create secretmanager client: %v", err)
-        return fmt.Errorf("GetSecret error: %v", err)
+		log.Printf("failed to create secretmanager client: %v", err)
+		return fmt.Errorf("GetSecret error: %v", err)
 	}
 
-    projectId := "yokobot-dev"
-    secret := s
+	projectId := "yokobot-dev"
+	secret := s
 
-    name := fmt.Sprintf("projects/%s/secrets/%s/versions/latest", projectId, secret)
+	name := fmt.Sprintf("projects/%s/secrets/%s/versions/latest", projectId, secret)
 
 	req := &secretmanagerpb.AccessSecretVersionRequest{
 		Name: name,
 	}
 	result, err := client.AccessSecretVersion(ctx, req)
 	if err != nil {
-        log.Printf("failed to access secret verion: %v", err)
-        return fmt.Errorf("GetSecret error: %v", err)
+		log.Printf("failed to access secret verion: %v", err)
+		return fmt.Errorf("GetSecret error: %v", err)
 	}
 	value := string(result.Payload.Data)
-    log.Printf("GetSecret end.")
+	log.Printf("GetSecret end.")
 	return value, nil
 }
 
 // Return S3 client
 func S3Client() *s3.S3 {
-    log.Printf("S3Client start.")
+	log.Printf("S3Client start.")
 	aws_access_key_id, _ := GetSecret("aws_access_key_id")
 	aws_secret_access_key, _ := GetSecret("aws_secret_access_key")
 
 	// s3 client作る
 	sess := session.Must(session.NewSession(&aws.Config{
-        Region: aws.String("ap-northeast-1"),
-        Credentials: credentials.NewStaticCredentials(aws_access_key_id, aws_secret_access_key, ""),
-    }))
+		Region:      aws.String("ap-northeast-1"),
+		Credentials: credentials.NewStaticCredentials(aws_access_key_id, aws_secret_access_key, ""),
+	}))
 	svc := s3.New(sess)
 
-    log.Printf("S3Client end.")
+	log.Printf("S3Client end.")
 	return svc
+}
+
+// Get Object from GCS
+func DownloadObject(s string) string {
+	// gcsクライアントつくる
+	// tmpにダウンロードする
+	// パスを返す
+	return path
 }
 
 // finalized event
 func Finalized(ctx context.Context, e GCSEvent) error {
-    log.Printf("Finalized start.")
+	log.Printf("Finalized start.")
 	meta, err := metadata.FromContext(ctx)
 	if err != nil {
-        log.Printf("Finalized get metadata failed.")
+		log.Printf("Finalized get metadata failed.")
 		return fmt.Errorf("Finalized error: %v", err)
 	}
 
@@ -141,10 +149,8 @@ func Finalized(ctx context.Context, e GCSEvent) error {
 
 	if err != nil {
 		log.Printf("s3 ListObjects error: %v", err)
-        return fmt.Errorf("Finalized error: %v", err)
+		return fmt.Errorf("Finalized error: %v", err)
 	}
-
-    //gcsのファイルをtmpにコピーしてs3にpushする TODO
 
 	for _, item := range resp.Contents {
 		object_name := *item.Key
@@ -153,16 +159,19 @@ func Finalized(ctx context.Context, e GCSEvent) error {
 				Bucket: aws.String(e.Bucket),
 				Key:    aws.String(e.Name),
 			}
+
+			//gcsのファイルをtmpにコピーしてs3にpushする TODO
+
 			_, err := svc.PutObject(input)
 			if err != nil {
 				log.Printf("s3 PutObject error: %v", err)
-                return fmt.Errorf("Finalized error: %v", err)
+				return fmt.Errorf("Finalized error: %v", err)
 			}
 		}
-        log.Printf("s3 PutObject: Key is exist.")
+		log.Printf("s3 PutObject: Key is exist.")
 	}
 
-    log.Printf("Finalize end.")
+	log.Printf("Finalize end.")
 	return nil
 }
 

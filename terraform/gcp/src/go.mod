@@ -5,6 +5,7 @@ go 1.16
 require (
 	cloud.google.com/go/functions v1.0.0
 	cloud.google.com/go/secretmanager v1.3.0 // indirect
+	cloud.google.com/go/storage v1.10.0 // indirect
 	github.com/GoogleCloudPlatform/functions-framework-go v1.5.3 // indirect
 	github.com/aws/aws-sdk-go v1.43.12 // indirect
 	google.golang.org/api v0.70.0 // indirect

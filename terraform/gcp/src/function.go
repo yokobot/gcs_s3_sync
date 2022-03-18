@@ -85,7 +85,6 @@ func GetSecret(s string) (string, error) {
     client, err := secretmanager.NewClient(ctx)
     if err != nil {
         log.Printf("failed to create secretmanager client: %v", err)
-        return fmt.Errorf("GetSecret error: %v", err)
     }
 
     projectId := "yokobot-dev"
@@ -99,7 +98,6 @@ func GetSecret(s string) (string, error) {
     result, err := client.AccessSecretVersion(ctx, req)
     if err != nil {
         log.Printf("failed to access secret verion: %v", err)
-        return fmt.Errorf("GetSecret error: %v", err)
     }
     value := string(result.Payload.Data)
     log.Printf("GetSecret end.")
@@ -130,7 +128,7 @@ func DownloadObject(s string) string {
     client, err := storage.NewClient(ctx)
 
     if err != nil {
-            return fmt.Errorf("storage.NewClient: %v", err)
+        log.Printf("storage.NewClient: %v", err)
     }
 
     defer client.Close()
@@ -139,38 +137,37 @@ func DownloadObject(s string) string {
     f, err := os.Create(s)
 
     if err != nil {
-
-            return fmt.Errorf("os.Create: %v", err)
+        log.Printf("os.Create: %v", err)
     }
 
     rc, err := client.Bucket("yokobot-dev").Object(s).NewReader(ctx)
 
     if err != nil {
-            return fmt.Errorf("Object(%q).NewReader: %v", s, err)
+        log.Printf("Object(%q).NewReader: %v", s, err)
     }
 
     defer rc.Close()
 
     if _, err := io.Copy(f, rc); err != nil {
-            return fmt.Errorf("io.Copy: %v", err)
+        log.Printf("io.Copy: %v", err)
     }
 
     if err = f.Close(); err != nil {
-            return fmt.Errorf("f.Close: %v", err)
+        log.Printf("f.Close: %v", err)
     }
 
-    fmt.Fprintf(w, "Blob %v downloaded to local file %v\n", s, s)
+    log.Printf("Blob %v downloaded to local file %v\n", s, s)
 
     // パスを返す
     return s
+}
 
 // finalized event
 func Finalized(ctx context.Context, e GCSEvent) error {
     log.Printf("Finalized start.")
-    meta, err := metadata.FromContext(ctx)
+    _, err := metadata.FromContext(ctx)
     if err != nil {
         log.Printf("Finalized get metadata failed.")
-        return fmt.Errorf("Finalized error: %v", err)
     }
 
     // 同名ファイルがs3に存在しているか確認して、存在していれば何もしない、存在しなければファイルをs3にコピーする
@@ -185,7 +182,6 @@ func Finalized(ctx context.Context, e GCSEvent) error {
 
     if err != nil {
         log.Printf("s3 ListObjects error: %v", err)
-        return fmt.Errorf("Finalized error: %v", err)
     }
 
     for _, item := range resp.Contents {
@@ -201,7 +197,6 @@ func Finalized(ctx context.Context, e GCSEvent) error {
             _, err := svc.PutObject(input)
             if err != nil {
                 log.Printf("s3 PutObject error: %v", err)
-                return fmt.Errorf("Finalized error: %v", err)
             }
         }
         log.Printf("s3 PutObject: Key is exist.")

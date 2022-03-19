@@ -187,14 +187,22 @@ func Finalized(ctx context.Context, e GCSEvent) error {
     for _, item := range resp.Contents {
         object_name := *item.Key
         if object_name != e.Name {
+            //gcsのファイルをtmpにコピーしてs3にpushする TODO
+            path := DownloadObject(e.Name)
+            file, err := os.Open(path)
+
+            if err != nil {
+                log.Fatalf("file open : %v",err)
+            }
+            defer file.Close()
+
             input := &s3.PutObjectInput{
                 Bucket: aws.String(e.Bucket),
                 Key:    aws.String(e.Name),
+                Body: file,
             }
 
-             //gcsのファイルをtmpにコピーしてs3にpushする TODO
-
-            _, err := svc.PutObject(input)
+            _, err = svc.PutObject(input)
             if err != nil {
                 log.Printf("s3 PutObject error: %v", err)
             }

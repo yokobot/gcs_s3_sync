@@ -184,12 +184,17 @@ func Finalized(ctx context.Context, e GCSEvent) error {
         log.Printf("s3 ListObjects error: %v", err)
     }
 
+    fmt.Printf("%v", resp)
+
     for _, item := range resp.Contents {
+        fmt.Printf("1")
         object_name := *item.Key
         if object_name != e.Name {
             //gcsのファイルをtmpにコピーしてs3にpushする TODO
             path := DownloadObject(e.Name)
             file, err := os.Open(path)
+
+            fmt.Printf("2")
 
             if err != nil {
                 log.Fatalf("file open : %v",err)
@@ -202,10 +207,13 @@ func Finalized(ctx context.Context, e GCSEvent) error {
                 Body: file,
             }
 
+            fmt.Printf("3")
+
             _, err = svc.PutObject(input)
             if err != nil {
                 log.Printf("s3 PutObject error: %v", err)
             }
+            fmt.Printf("4")
         }
         log.Printf("s3 PutObject: Key is exist.")
     }

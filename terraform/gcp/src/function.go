@@ -186,36 +186,27 @@ func Finalized(ctx context.Context, e GCSEvent) error {
 
     fmt.Printf("%v", resp)
 
-    for _, item := range resp.Contents {
-        fmt.Printf("1")
-        object_name := *item.Key
-        if object_name != e.Name {
-            //gcsのファイルをtmpにコピーしてs3にpushする TODO
-            path := DownloadObject(e.Name)
-            file, err := os.Open(path)
+    if len(resp.Contents) != 0 {
+        log.Printf("%v is exist in S3.", e.Name)
+    } else {
+        path := DownloadObject(e.Name)
+        file, err := os.Open(path)
 
-            fmt.Printf("2")
-
-            if err != nil {
-                log.Fatalf("file open : %v",err)
-            }
-            defer file.Close()
-
-            input := &s3.PutObjectInput{
-                Bucket: aws.String(e.Bucket),
-                Key:    aws.String(e.Name),
-                Body: file,
-            }
-
-            fmt.Printf("3")
-
-            _, err = svc.PutObject(input)
-            if err != nil {
-                log.Printf("s3 PutObject error: %v", err)
-            }
-            fmt.Printf("4")
+        if err != nil {
+            log.Fatalf("file open : %v",err)
         }
-        log.Printf("s3 PutObject: Key is exist.")
+        defer file.Close()
+
+        input := &s3.PutObjectInput{
+            Bucket: aws.String(e.Bucket),
+            Key:    aws.String(e.Name),
+            Body: file,
+        }
+
+        _, err = svc.PutObject(input)
+        if err != nil {
+            log.Printf("s3 PutObject error: %v", err)
+        }
     }
 
     log.Printf("Finalize end.")

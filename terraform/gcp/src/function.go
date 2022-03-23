@@ -71,7 +71,7 @@ func HelloGCS(ctx context.Context, e GCSEvent) error {
     switch {
     case (meta.EventType == "google.storage.object.finalize"):
         Finalized(ctx, e)
-    case (meta.EventType != "google.storage.object.delete"):
+    case (meta.EventType == "google.storage.object.delete"):
         Delete(ctx, e)
     }
 
@@ -165,10 +165,6 @@ func DownloadObject(s string) string {
 // finalized event
 func Finalized(ctx context.Context, e GCSEvent) error {
     log.Printf("Finalized start.")
-    _, err := metadata.FromContext(ctx)
-    if err != nil {
-        log.Printf("Finalized get metadata failed.")
-    }
 
     // 同名ファイルがs3に存在しているか確認して、存在していれば何もしない、存在しなければファイルをs3にコピーする
     svc := S3Client()
@@ -215,14 +211,7 @@ func Finalized(ctx context.Context, e GCSEvent) error {
 
 // delete event
 func Delete(ctx context.Context, e GCSEvent) error {
-    meta, err := metadata.FromContext(ctx)
-    if err != nil {
-        return fmt.Errorf("metadata.FromContext: %v", err)
-    }
-
-    if meta.EventType != "google.storage.object.delete" {
-        return fmt.Errorf("Event is not delete. %v")
-    }
+    log.Printf("Delete start.")
 
     //s3に同名ファイルが存在しているか確認して、存在していればファイルを削除する
     svc := S3Client()
@@ -232,23 +221,21 @@ func Delete(ctx context.Context, e GCSEvent) error {
         Bucket: aws.String(e.Bucket),
         Prefix: aws.String(e.Name),
     }
+
     resp, err := svc.ListObjects(input)
+
     if err != nil {
-        return fmt.Errorf("s3 ListObjects error: %v", err)
+        log.Printf("s3 ListObjects error: %v", err)
     }
 
-    // 同名のファイルが存在していればs3にファイルを削除する
-    for _, item := range resp.Contents {
-        object_name := *item.Key
-        if object_name == e.Name {
-            input := &s3.DeleteObjectInput{
-                Bucket: aws.String(e.Bucket),
-                Key:    aws.String(e.Name),
-            }
-            _, err := svc.DeleteObject(input)
-            if err != nil {
-                return fmt.Errorf("s3 ListObjects error: %v", err)
-            }
+    if len(resp.Contents) != 0 {
+        input := &s3.DeleteObjectInput{
+            Bucket: aws.String(e.Bucket),
+            Key:    aws.String(e.Name),
+        }
+        _, err := svc.DeleteObject(input)
+        if err != nil {
+            log.Printf("s3 DeleteObject error: %v", err)
         }
     }
 

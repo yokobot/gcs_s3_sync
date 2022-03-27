@@ -55,7 +55,7 @@ type GCSEvent struct {
 }
 
 // HelloGCS consumes a GCS event.
-func HelloGCS(ctx context.Context, e GCSEvent) error {
+func S3Sync(ctx context.Context, e GCSEvent) error {
     meta, err := metadata.FromContext(ctx)
     if err != nil {
         return fmt.Errorf("metadata.FromContext: %v", err)

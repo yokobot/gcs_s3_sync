@@ -11,7 +11,7 @@ import (
 
 func main() {
     ctx := context.Background()
-    if err := funcframework.RegisterEventFunctionContext(ctx, "/", gcs_s3_sync.HelloGCS); err != nil {
+    if err := funcframework.RegisterEventFunctionContext(ctx, "/", gcs_s3_sync.S3Sync); err != nil {
         log.Fatalf("funcframework.RegisterEventFunctionContext: %v\n", err)
     }
 

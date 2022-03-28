@@ -57,9 +57,11 @@ type GCSEvent struct {
 // HelloGCS consumes a GCS event.
 func S3Sync(ctx context.Context, e GCSEvent) error {
     meta, err := metadata.FromContext(ctx)
+
     if err != nil {
-        return fmt.Errorf("metadata.FromContext: %v", err)
+        log.Printf("metadata.FromContext: %v", err)
     }
+
     log.Printf("Event ID: %v\n", meta.EventID)
     log.Printf("Event type: %v\n", meta.EventType)
     log.Printf("Bucket: %v\n", e.Bucket)
@@ -83,22 +85,25 @@ func GetSecret(s string) (string, error) {
     log.Printf("GetSecret start.")
     ctx := context.Background()
     client, err := secretmanager.NewClient(ctx)
+
     if err != nil {
         log.Printf("failed to create secretmanager client: %v", err)
     }
 
     projectId := "yokobot-dev"
     secret := s
-
     name := fmt.Sprintf("projects/%s/secrets/%s/versions/latest", projectId, secret)
 
     req := &secretmanagerpb.AccessSecretVersionRequest{
         Name: name,
     }
+
     result, err := client.AccessSecretVersion(ctx, req)
+
     if err != nil {
         log.Printf("failed to access secret verion: %v", err)
     }
+
     value := string(result.Payload.Data)
     log.Printf("GetSecret end.")
     return value, nil
@@ -115,15 +120,15 @@ func S3Client() *s3.S3 {
         Region: aws.String("ap-northeast-1"),
         Credentials: credentials.NewStaticCredentials(aws_access_key_id, aws_secret_access_key, ""),
     }))
-    svc := s3.New(sess)
 
+    svc := s3.New(sess)
     log.Printf("S3Client end.")
     return svc
 }
 
 // Get Object from GCS
 func DownloadObject(s string) string {
-    // gcsクライアントつくる
+    log.Printf("DownloadObjects start.")
     ctx := context.Background()
     client, err := storage.NewClient(ctx)
 
@@ -157,8 +162,7 @@ func DownloadObject(s string) string {
     }
 
     log.Printf("Blob %v downloaded to local file %v\n", s, s)
-
-    // パスを返す
+    log.Printf("DownloadObjects start.")
     return s
 }
 
@@ -239,5 +243,6 @@ func Delete(ctx context.Context, e GCSEvent) error {
         }
     }
 
+    log.Printf("Delete end.")
     return nil
 }
